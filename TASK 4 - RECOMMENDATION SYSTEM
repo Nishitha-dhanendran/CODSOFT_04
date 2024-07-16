@@ -1,0 +1,72 @@
+import java.util.*;
+
+// Class to represent a recommendation system
+class RecommendationSystem {
+    // Data structure to hold user-item ratings
+    private Map<String, Map<String, Double>> userRatings;
+
+    public RecommendationSystem() {
+        this.userRatings = new HashMap<>();
+    }
+
+    // Method to add user ratings
+    public void addUserRating(String user, String item, double rating) {
+        userRatings.putIfAbsent(user, new HashMap<>());
+        userRatings.get(user).put(item, rating);
+    }
+
+    // Method to recommend items to a user using collaborative filtering
+    public List<String> recommendItems(String user) {
+        Map<String, Double> scores = new HashMap<>();
+        Map<String, Integer> frequency = new HashMap<>();
+
+        // Calculate scores based on other users' ratings
+        for (Map.Entry<String, Map<String, Double>> entry : userRatings.entrySet()) {
+            String otherUser = entry.getKey();
+            if (!otherUser.equals(user)) {
+                Map<String, Double> otherUserRatings = entry.getValue();
+                for (Map.Entry<String, Double> itemRating : otherUserRatings.entrySet()) {
+                    String item = itemRating.getKey();
+                    double rating = itemRating.getValue();
+                    scores.put(item, scores.getOrDefault(item, 0.0) + rating);
+                    frequency.put(item, frequency.getOrDefault(item, 0) + 1);
+                }
+            }
+        }
+
+        // Normalize scores by frequency
+        Map<String, Double> normalizedScores = new HashMap<>();
+        for (Map.Entry<String, Double> scoreEntry : scores.entrySet()) {
+            String item = scoreEntry.getKey();
+            double score = scoreEntry.getValue();
+            int freq = frequency.get(item);
+            normalizedScores.put(item, score / freq);
+        }
+
+        // Sort items based on normalized scores in descending order
+        List<String> recommendedItems = new ArrayList<>(normalizedScores.keySet());
+        recommendedItems.sort((item1, item2) -> Double.compare(normalizedScores.get(item2), normalizedScores.get(item1)));
+
+        return recommendedItems;
+    }
+
+    public static void main(String[] args) {
+        // Example usage
+        RecommendationSystem system = new RecommendationSystem();
+
+        // Add user ratings (in a real system, these would come from a database or user input)
+        system.addUserRating("Alice", "Item1", 5.0);
+        system.addUserRating("Alice", "Item2", 4.0);
+        system.addUserRating("Alice", "Item3", 3.0);
+        system.addUserRating("Bob", "Item1", 4.0);
+        system.addUserRating("Bob", "Item2", 3.0);
+        system.addUserRating("Charlie", "Item2", 5.0);
+        system.addUserRating("Charlie", "Item3", 4.0);
+
+        // Recommend items for a user
+        String user = "Alice";
+        List<String> recommendedItems = system.recommendItems(user);
+
+        System.out.println("Recommended items for " + user + ": " + recommendedItems);
+    }
+}
